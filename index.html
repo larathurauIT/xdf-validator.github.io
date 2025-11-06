@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>XML Checker</title>
+<style>
+  body { font-family: sans-serif; margin: 2 em; }
+  #output { white-space: pre-wrap; background: #f5f5f5; padding: 1 em; border-radius: 6 px; }
+  .error { color: red; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>XML Unicode Checker</h1>
+<p>Lade eine XML-Datei hoch, um sie zu prüfen:</p>
+
+<input type="file" id="fileInput" accept=".xml" />
+<pre id="output">Noch keine Datei geprüft.</pre>
+
+<script>
+// --- Pattern aus deinem Python-Code ---
+const STRLTN = /(([\t-\n\r -~¡-¬®-ćĊ-ěĞ-ģĦ-ıĴ-śŞ-ūŮ-žƏƠ-ơƯ-ưƷǍ-ǔǞ-ǟǤ-ǰǴ-ǵǺ-ǿȘ-țȞ-ȟȪ-ȫȮ-ȳəʒḂ-ḃḊ-ḋḐ-ḑḞ-ḡḤ-ḧḰ-ḱṀ-ṁṄ-ṅṖ-ṗṠ-ṣṪ-ṫẀ-ẅẌ-ẓẞẠ-ầẪ-ẬẮ-ềỄ-ồỖ-ờỤ-ỹ€])|(M̂|N̂|m̂|n̂|D̂|d̂|J̌|L̂|l̂))*/g;
+
+// --- Hilfsfunktion: Text prüfen ---
+function validateText(text, path, output) {
+  // Entferne erlaubte Zeichen
+  const fault = text.replace(STRLTN, "");
+  if (fault.length > 0) {
+    const uniqueFaults = [...new Set(fault)];
+    let marked = text;
+    for (const char of uniqueFaults) {
+      marked = marked.replaceAll(char, `>>>${char}<<<`);
+    }
+    const faultCodes = uniqueFaults.map(c => "0x" + c.charCodeAt(0).toString(16));
+    output.push(
+      `❌ FEHLER in Element ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
+    );
+  }
+}
+
+// --- XML rekursiv durchlaufen ---
+function iterChildren(element, currentPath, output) {
+  const tag = element.tagName;
+  let tagText = tag;
+
+  // Versuche, einen sprechenden Namen aus Unterelementen zu holen
+  const idNode = element.querySelector(":scope > id, :scope > identifikation > id, :scope > name");
+  if (idNode && idNode.textContent.trim()) {
+    tagText = idNode.textContent.trim();
+  }
+
+  const path = currentPath ? `${currentPath}/${tagText}` : tagText;
+
+  const text = element.childNodes.length === 1 && element.firstChild.nodeType === Node.TEXT_NODE
+    ? element.textContent.trim()
+    : "";
+
+  if (text) {
+    validateText(text, path, output);
+  }
+
+  for (const child of element.children) {
+    iterChildren(child, path, output);
+  }
+}
+
+// --- Hauptfunktion beim Datei-Upload ---
+document.getElementById("fileInput").addEventListener("change", event => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const xmlString = e.target.result;
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+    const output = [];
+
+    // Prüfen, ob Parsing erfolgreich war
+    if (xmlDoc.querySelector("parsererror")) {
+      output.push("❌ Fehler: XML konnte nicht gelesen werden!");
+    } else {
+      output.push("--- STARTING ITERATION ---\n");
+      iterChildren(xmlDoc.documentElement, "", output);
+      output.push("\n--- FINISHED ITERATION ---");
+    }
+
+    document.getElementById("output").textContent = output.join("\n\n");
+  };
+  reader.readAsText(file, "utf-8");
+});
+</script>
+
+</body>
+</html>
