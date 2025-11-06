@@ -4,39 +4,46 @@
 <meta charset="UTF-8">
 <title> XML Checker</title>
 <style>
+   /* ------------------------------
+     Allgemeine Stile für die Seite
+  ------------------------------ */
   body { 
-        font-family: Arial, sans-serif;
-        margin: 0;
-        height: 100 %;
-        background-color: #f0f0f0;
+        font-family: Arial, sans-serif; /* Schriftart für die ganze Seite */
+        margin: 0;                         /* Standardabstand entfernen */
+        height: 100%;                     /* Body soll die volle Höhe einnehmen */
+        background-color: #f0f0f0;        /* Heller Hintergrund */
   }
   .container {
-      display: flex;
-      justify-content: center; /* horizontal zentrieren */
-      align-items: center;     /* vertikal zentrieren */
+      display: flex;            /* Flexbox aktivieren */
+      justify-content: center;  /* horizontal zentrieren */
+      align-items: center;      /* vertikal zentrieren */
       height: 100 vh;           /* Container nimmt ganze Höhe ein */
-      text-align: center;      /* Text zentrieren */
+      text-align: center;       /* Text zentrieren */
+      flex-direction: column;   /* Elemente unterinander anordnen (statt nebeneinander)*/ 
     }
   .content {
       background-color: white; /* weiße Box für den Inhalt */
-      padding: 40 px;
-      border-radius: 10 px;
-      box-shadow: 0 4 px 8 px rgba (0,0,0,0.2);
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
   h1 {
-      color: #333;
-      margin-bottom: 20 px;
+      color: #333;              /* Dunkelgraue Schriftfarbe */
+    margin-bottom: 20px;        /* Abstand unterhalb der Überschrift */
     }
 
     p {
       color: #666;
     }
   #output { 
-    white-space: pre-wrap;
-    background: #f5f5f5;
-    padding: 1 em;
-    border-radius: 6 px; 
+    white-space: pre-wrap;      /* Zeilenumbrüche und Leerzeichen bleiben erhalten */
+    background: #f5f5f5;        /* Heller Hintergrund für Output */
+    padding: 1em;               /* Innenabstand */
+    border-radius: 6px;         /* Abgerundete Ecken */ 
   }
+  /* ------------------------------
+     Fehler-Markierung
+  ------------------------------ */
   .error { color: red;
           font-weight: bold; }
 </style>
@@ -54,19 +61,30 @@
 <script>
 
   
-// --- Pattern aus deinem Python-Code ---
+/* ------------------------------
+   Regulärer Ausdruck für erlaubte Unicode-Zeichen
+   STRLTN = alle erlaubten Zeichen
+------------------------------ */
 const STRLTN = /(([\t-\n\r -~¡-¬®-ćĊ-ěĞ-ģĦ-ıĴ-śŞ-ūŮ-žƏƠ-ơƯ-ưƷǍ-ǔǞ-ǟǤ-ǰǴ-ǵǺ-ǿȘ-țȞ-ȟȪ-ȫȮ-ȳəʒḂ-ḃḊ-ḋḐ-ḑḞ-ḡḤ-ḧḰ-ḱṀ-ṁṄ-ṅṖ-ṗṠ-ṣṪ-ṫẀ-ẅẌ-ẓẞẠ-ầẪ-ẬẮ-ềỄ-ồỖ-ờỤ-ỹ€])|(M̂|N̂|m̂|n̂|D̂|d̂|J̌|L̂|l̂))*/g;
 
-// --- Hilfsfunktion: Text prüfen ---
+/* ------------------------------
+   Funktion zum Prüfen des Textes
+   - text: der zu prüfende Text
+   - path: XML-Pfad für die Fehlermeldung
+   - output: Array zum Sammeln der Ergebnisse
+------------------------------ */
 function validateText(text, path, output) {
-  // Entferne erlaubte Zeichen
+  // Entferne erlaubte Zeichen, übrig bleiben Fehler
   const fault = text.replace(STRLTN, "");
+  // Wenn Fehler gefunden 
   if (fault.length > 0) {
-    const uniqueFaults = [...new Set(fault)];
+    const uniqueFaults = [...new Set(fault)]; // Nur einmal pro Zeichen
     let marked = text;
+  // Jedes verbotene Zeichen rot markieren
     for (const char of uniqueFaults) {
       marked = marked.replaceAll(char, `>>>${char}<<<`);
     }
+  // Fehlermeldung vorbereiten  
     const faultCodes = uniqueFaults.map(c => "0x" + c.charCodeAt(0).toString(16));
     output.push(
       `❌ FEHLER in Element ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
@@ -74,7 +92,12 @@ function validateText(text, path, output) {
   }
 }
 
-// --- XML rekursiv durchlaufen ---
+/* ------------------------------
+   Funktion, die alle XML-Elemente rekursiv durchläuft
+   - element: aktuelles XML-Element
+   - currentPath: Pfad für Fehlermeldungen
+   - output: Array für Ergebnisse
+------------------------------ */
 function iterChildren(element, currentPath, output) {
   const tag = element.tagName;
   let tagText = tag;
@@ -84,23 +107,25 @@ function iterChildren(element, currentPath, output) {
   if (idNode && idNode.textContent.trim()) {
     tagText = idNode.textContent.trim();
   }
-
+ // Pfad zum aktuellen Element
   const path = currentPath ? `${currentPath}/${tagText}` : tagText;
-
+ // Text im aktuellen Element
   const text = element.childNodes.length === 1 && element.firstChild.nodeType === Node.TEXT_NODE
     ? element.textContent.trim()
     : "";
 
   if (text) {
-    validateText(text, path, output);
+    validateText(text, path, output); // Text prüfen
   }
-
+// Rekursiv alle Kinder prüfen
   for (const child of element.children) {
     iterChildren(child, path, output);
   }
 }
 
-// --- Hauptfunktion beim Datei-Upload ---
+/* ------------------------------
+   Event Listener für Datei-Upload
+------------------------------ */
 document.getElementById("fileInput").addEventListener("change", event => {
   const file = event.target.files[0];
   if (!file) return;
@@ -121,7 +146,7 @@ document.getElementById("fileInput").addEventListener("change", event => {
       iterChildren(xmlDoc.documentElement, "", output);
       output.push("\n--- FINISHED ITERATION ---");
     }
-
+   // Ergebnisse in HTML ausgeben (rot markierte Zeichen werden angezeigt)
     document.getElementById("output").textContent = output.join("\n\n");
   };
   reader.readAsText(file, "utf-8");
