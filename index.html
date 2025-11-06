@@ -28,6 +28,7 @@
       max-width: 180px;             /* Logo-Größe passend */
       height: auto;
       margin: 0 auto 20px auto;      /* unten Abstand */
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
    }
    
   .content {
@@ -37,12 +38,11 @@
      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
      width: 60%;
      max-width: 400px;
+     min-height: 150px;      /* Box hat mindestens diese Höhe */
      text-align: center;
      display: flex;
      flex-direction: column;
-     justify-content: center;      /* vertikal zentrieren innerhalb der Content-Box */
-     max-height: 400px;       /* maximale Höhe der Box */
-     overflow: auto;          /* falls Inhalt größer als max-height */
+     justify-content: flex-start ;      /* vertikal zentrieren innerhalb der Content-Box */
   }
    
   h1 {
