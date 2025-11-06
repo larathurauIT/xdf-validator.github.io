@@ -32,16 +32,17 @@
    
   .content {
      background-color: white;
-     padding: 40px;
+     padding: 20px;
      border-radius: 10px;
      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-     width: 90%;
-     max-width: 600px;
+     width: 60%;
+     max-width: 400px;
      text-align: center;
-     flex-grow: 1;                 /* Content kann wachsen */
      display: flex;
      flex-direction: column;
      justify-content: center;      /* vertikal zentrieren innerhalb der Content-Box */
+     max-height: 400px;       /* maximale Höhe der Box */
+     overflow: auto;          /* falls Inhalt größer als max-height */
   }
    
   h1 {
