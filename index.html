@@ -1,6 +1,19 @@
+<!--
+Projekt:       XML Unicode Checker
+Beschreibung:  Prüft hochgeladene XML-Dateien auf verbotene Unicode-Zeichen
+Autor:         Python Orginal Code: Niklas Dieckmann / Falcos GmbH
+               Übersetzung nach JavaSkript: Lara Thurau / Falcos GmbH
+Version:       1.0
+Datum:         07.11.2025
+Website:       https://www.falcos.de
+Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
+               - Verwendet DOMParser für die XML-Verarbeitung
+               - Markiert unerlaubte Unicode-Zeichen in der Ausgabe
+-->
 <!DOCTYPE html>
 <html lang="de">
 <head> 
+<!-- Zeichencodierung auf UTF-8 setzen, wichtig für Unicode-Zeichen -->
 <meta charset="UTF-8">
 <title> XML Checker</title>
 <style>
@@ -22,7 +35,6 @@
       flex-direction: column;   /* Elemente untereinander anordnen */ 
       padding-top: 20px;        /* Abstand oben */ 
     }
-   
    .logo {
       display: block; 
       max-width: 180px;             /* Logo-Größe passend */
@@ -30,7 +42,6 @@
       margin: 0 auto 20px auto;      /* unten Abstand */
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
    }
-   
   .content {
      background-color: white;
      padding: 40px;
@@ -47,8 +58,6 @@
      margin: 0 auto;         /* zentrieren bei breiterer Breite */
      overflow-wrap: break-word; /* Lange Worte umbrechen */
 }
-
-   
   h1 {
      color: #333;              /* Dunkelgraue Schriftfarbe */
      margin-bottom: 20px;        /* Abstand unterhalb der Überschrift */
@@ -72,25 +81,23 @@
 </head>
 <body>
   <div class="container">
-     <!-- Logo oben --> 
+     <!-- Logo oben auf der Seite --> 
       <img class = "logo" src="https://static.wixstatic.com/media/60bd57_5b977673c14545a48c41a3a8c2fb94e6~mv2.png/v1/fill/w_180,h_130,fp_0.47_0.42,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Falcos_Logo_BottomText.png"
          alt="Firmenlogo von der Falcos GmbH">
    <div class="content">
      <h1>XML Unicode Checker</h1>
      <p>Lade eine XML-Datei hoch, um sie zu prüfen:</p>
      <pre id="output">Noch keine Datei geprüft.</pre>
+      <!-- Datei-Upload Input: nur XML-Dateien erlaubt -->
      <input type="file" id="fileInput" accept=".xml" />
   </div>
   <div>    
-<script>
-
-  
+<script>  
 /* ------------------------------
    Regulärer Ausdruck für erlaubte Unicode-Zeichen
    STRLTN = alle erlaubten Zeichen
 ------------------------------ */
 const STRLTN = /(([\t-\n\r -~¡-¬®-ćĊ-ěĞ-ģĦ-ıĴ-śŞ-ūŮ-žƏƠ-ơƯ-ưƷǍ-ǔǞ-ǟǤ-ǰǴ-ǵǺ-ǿȘ-țȞ-ȟȪ-ȫȮ-ȳəʒḂ-ḃḊ-ḋḐ-ḑḞ-ḡḤ-ḧḰ-ḱṀ-ṁṄ-ṅṖ-ṗṠ-ṣṪ-ṫẀ-ẅẌ-ẓẞẠ-ầẪ-ẬẮ-ềỄ-ồỖ-ờỤ-ỹ€])|(M̂|N̂|m̂|n̂|D̂|d̂|J̌|L̂|l̂))*/g;
-
 /* ------------------------------
    Funktion zum Prüfen des Textes
    - text: der zu prüfende Text
@@ -102,20 +109,20 @@ function validateText(text, path, output) {
   const fault = text.replace(STRLTN, "");
   // Wenn Fehler gefunden 
   if (fault.length > 0) {
-    const uniqueFaults = [...new Set(fault)]; // Nur einmal pro Zeichen
-    let marked = text;
-  // Jedes verbotene Zeichen rot markieren
+    const uniqueFaults = [...new Set(fault)]; // Nur einmal pro Zeichen speichern (doppelte entfernen)
+    let marked = text; // Kopie des Originaltexts, in dem die verbotenen Zeichen markiert werden
+  // Jedes verbotene Zeichen markieren
     for (const char of uniqueFaults) {
       marked = marked.replaceAll(char, `>>>${char}<<<`);
     }
-  // Fehlermeldung vorbereiten  
+  // Fehlermeldung vorbereiten
+  // charCodeAt(0) gibt den UTF-16 Code, toString(16) wandelt ihn in Hex um
     const faultCodes = uniqueFaults.map(c => "0x" + c.charCodeAt(0).toString(16));
     output.push(
       `❌ FEHLER in Element ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
     );
   }
 }
-
 /* ------------------------------
    Funktion, die alle XML-Elemente rekursiv durchläuft
    - element: aktuelles XML-Element
@@ -125,18 +132,19 @@ function validateText(text, path, output) {
 function iterChildren(element, currentPath, output) {
   const tag = element.tagName;
   let tagText = tag;
-
-  // Versuche, einen sprechenden Namen aus Unterelementen zu holen
+  // Versuche, einen sprechenden Namen aus Unterelementen zu holen:
+  // - id direkt im Element
+  // - id innerhalb eines "identifikation"-Elements
+  // - name direkt im Element
   const idNode = element.querySelector(":scope > id, :scope > identifikation > id, :scope > name");
   if (idNode && idNode.textContent.trim()) {
     tagText = idNode.textContent.trim();
   }
- // Pfad zum aktuellen Element
+ // Pfad zum aktuellen Element extrahieren
+ // Nur, wenn das Element genau einen Text-Knoten enthält
   const path = currentPath ? `${currentPath}/${tagText}` : tagText;
  // Text im aktuellen Element
-  const text = element.childNodes.length === 1 && element.firstChild.nodeType === Node.TEXT_NODE
-    ? element.textContent.trim()
-    : "";
+  const text = element.childNodes.length === 1 && element.firstChild.nodeType === Node.TEXT_NODE ? element.textContent.trim() : "";
 
   if (text) {
     validateText(text, path, output); // Text prüfen
@@ -146,36 +154,34 @@ function iterChildren(element, currentPath, output) {
     iterChildren(child, path, output);
   }
 }
-
 /* ------------------------------
    Event Listener für Datei-Upload
 ------------------------------ */
 document.getElementById("fileInput").addEventListener("change", event => {
-  const file = event.target.files[0];
+  const file = event.target.files[0]; // nimmt erste ausgewählte datei
   if (!file) return;
-
   const reader = new FileReader();
-  reader.onload = e => {
-    const xmlString = e.target.result;
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+  reader.onload = e => { // Funktion wird aufgerufen, wenn die Datei komplett eingelesen wurde
+    const xmlString = e.target.result; // XML als Zeichenkette
+    const parser = new DOMParser(); // DOMParser kann aus Text ein XML-Dokument-Objekt machen
+    const xmlDoc = parser.parseFromString(xmlString, "application/xml"); 
 
-    const output = [];
+    const output = []; // Hier werden später alle Meldungen gesammelt
 
     // Prüfen, ob Parsing erfolgreich war
     if (xmlDoc.querySelector("parsererror")) {
       output.push("❌ Fehler: XML konnte nicht gelesen werden!");
     } else {
       output.push("--- STARTING ITERATION ---\n");
-      iterChildren(xmlDoc.documentElement, "", output);
+      iterChildren(xmlDoc.documentElement, "", output); // Hauptfunktion aufrufen
       output.push("\n--- FINISHED ITERATION ---");
     }
    // Ergebnisse in HTML ausgeben (rot markierte Zeichen werden angezeigt)
+   // join("\n\n") → fügt alle Array-Einträge mit Leerzeile zusammen
     document.getElementById("output").textContent = output.join("\n\n");
   };
-  reader.readAsText(file, "utf-8");
+  reader.readAsText(file, "utf-8"); // startet Einlesen der Datei als Text
 });
 </script>
-
 </body>
 </html>
