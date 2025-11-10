@@ -146,7 +146,7 @@ function iterChildren(element, currentPath, output) {
   // unnötige Teile werden rausgeschmissen
  path=path
    .replace(/^(xdf3:)?xdatenfelder\.[^/]+\//, "")
-   .replace(/xdf3:struktur\/xdf3:enthaelt\//g,"")
+   .replace(/(?:[^/]+\/)?struktur\/(?:[^/]+\/)?enthaelt\//g, "")
    .replace(/xdf3:/g,"")
      .replace(/\/+/g, "/")
      .replace(/^\/|\/$/g, "");
