@@ -20,57 +20,63 @@ Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
    /* ------------------------------
      Allgemeine Stile für die Seite
   ------------------------------ */
-  body { 
-        font-family: Arial, sans-serif; /* Schriftart für die ganze Seite */
-        margin: 0;                         /* Standardabstand entfernen */
-        height: 100%;                     /* Body soll die volle Höhe einnehmen */
-        background-color: #f0f0f0;        /* Heller Hintergrund */
+  body {
+    font-family: "Arial", sans‑serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    color: #333333;
   }
   .container {
-      display: flex;            /* Flexbox aktivieren */
-      justify-content: center;  /* horizontal zentrieren */
-      align-items: center;      /* vertikal zentrieren */
-      height: 100vh;            /* Container nimmt ganze Höhe ein */
-      text-align: center;       /* Text zentrieren */
-      flex-direction: column;   /* Elemente untereinander anordnen */ 
-      padding-top: 20px;        /* Abstand oben */ 
-    }
-   .logo {
-      display: block; 
-      max-width: 180px;             /* Logo-Größe passend */
-      height: auto;
-      margin: 0 auto 20px auto;      /* unten Abstand */
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-   }
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
   .content {
-     background-color: white;
-     padding: 40px;
-     border-radius: 10px;
-     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-     width: auto;            /* Breite passt sich an Inhalt an */
-     min-width: 300px;       /* Minimum-Breite */
-     max-width: 90vw;        /* Maximal 90% der Viewport-Breite */
-     text-align: center;
-     flex-grow: 1;
-     display: flex;
-     flex-direction: column;
-     justify-content: flex-start; /* Inhalt oben ausrichten */
-     margin: 0 auto;         /* zentrieren bei breiterer Breite */
-     overflow-wrap: break-word; /* Lange Worte umbrechen */
-}
+    background-color: #fafafa;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 90%;
+    max-width: 800px;
+    text-align: center;
+  }
+  .logo {
+    max-width: 200px;
+    height: auto;
+    margin-bottom: 20px;
+  }
   h1 {
-     color: #333;              /* Dunkelgraue Schriftfarbe */
-     margin-bottom: 20px;        /* Abstand unterhalb der Überschrift */
-    }
-   
+    color: #222222;
+    margin-bottom: 20px;
+  }
   p {
-     color: #666;
+    color: #555555;
+  }
+  input[type="file"] {
+    margin-top: 20px;
+    padding: 10px;
+  }
+  #output {
+    margin-top: 30px;
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    text-align: left;
+    font-family: monospace;
+    color: #222222;
+  }
+  @media (max-width: 600px) {
+    .content {
+      padding: 20px;
     }
-  #output { 
-    white-space: pre-wrap;      /* Zeilenumbrüche und Leerzeichen bleiben erhalten */
-    background: #f5f5f5;        /* Heller Hintergrund für Output */
-    padding: 1em;               /* Innenabstand */
-    border-radius: 6px;         /* Abgerundete Ecken */ 
+    #output {
+      font-size: 14px;
+    }
   }
   /* ------------------------------
      Fehler-Markierung
