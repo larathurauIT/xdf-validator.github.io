@@ -1,26 +1,26 @@
 <!--
-Projekt:       XML Unicode Checker
-Beschreibung:  Prüft hochgeladene XML-Dateien auf verbotene Unicode-Zeichen
-Autor:         Python Orginal Code: Niklas Dieckmann / Falcos GmbH
-               Übersetzung nach JavaSkript: Lara Thurau / Falcos GmbH
-Version:       1.0
-Datum:         07.11.2025
-Website:       https://www.falcos.de
-Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
-               - Verwendet DOMParser für die XML-Verarbeitung
-               - Markiert unerlaubte Unicode-Zeichen in der Ausgabe
+Projekt:       XML Unicode Checker
+Beschreibung:  Prüft hochgeladene XML-Dateien auf verbotene Unicode-Zeichen
+Autor:         Python Orginal Code: Niklas Dieckmann / Falcos GmbH
+               Übersetzung nach JavaSkript: Lara Thurau / Falcos GmbH
+Version:       1.0
+Datum:         07.11.2025
+Website:       https://www.falcos.de
+Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
+               - Verwendet DOMParser für die XML-Verarbeitung
+               - Markiert unerlaubte Unicode-Zeichen in der Ausgabe
 -->
 <!DOCTYPE html>
 <html lang="de">
-<head> 
+<head>
 <!-- Zeichencodierung auf UTF-8 setzen, wichtig für Unicode-Zeichen -->
 <meta charset="UTF-8">
 <title> XML Checker</title>
 <style>
-   /* ------------------------------
-     Allgemeine Stile für die Seite
-  ------------------------------ */
-  body {
+   /* ------------------------------
+     Allgemeine Stile für die Seite
+  ------------------------------ */
+  body {
         font-family: Arial, sans-serif; /* Schriftart für die ganze Seite */
         margin: 0;                         /* Standardabstand entfernen */
         height: 100%;                     /* Body soll die volle Höhe einnehmen */
@@ -72,126 +72,125 @@ Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
     padding: 1em;               /* Innenabstand */
     border-radius: 6px;         /* Abgerundete Ecken */
   }
-
-  /* ------------------------------
-     Fehler-Markierung
-  ------------------------------ */
-  .error { color: red;
-          font-weight: bold; }
+  /* ------------------------------
+     Fehler-Markierung
+  ------------------------------ */
+  .error { color: red;
+          font-weight: bold; }
 </style>
 </head>
 <body>
-  <div class="container">
-     <!-- Logo oben auf der Seite --> 
-      <img class = "logo" src="https://static.wixstatic.com/media/60bd57_5b977673c14545a48c41a3a8c2fb94e6~mv2.png/v1/fill/w_180,h_130,fp_0.47_0.42,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Falcos_Logo_BottomText.png"
-         alt="Firmenlogo von der Falcos GmbH">
-   <div class="content">
-     <h1>XML Unicode Checker</h1>
-     <p>Lade eine XML-Datei hoch, um sie zu prüfen:</p>
-     <pre id="output">Noch keine Datei geprüft.</pre>
-      <!-- Datei-Upload Input: nur XML-Dateien erlaubt -->
-     <input type="file" id="fileInput" accept=".xml" />
-  </div>
-  <div>    
-<script>  
+  <div class="container">
+     <!-- Logo oben auf der Seite -->
+      <img class = "logo" src="https://static.wixstatic.com/media/60bd57_5b977673c14545a48c41a3a8c2fb94e6~mv2.png/v1/fill/w_180,h_130,fp_0.47_0.42,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Falcos_Logo_BottomText.png"
+         alt="Firmenlogo von der Falcos GmbH">
+   <div class="content">
+     <h1>XML Unicode Checker</h1>
+     <p>Lade eine XML-Datei hoch, um sie zu prüfen:</p>
+     <pre id="output">Noch keine Datei geprüft.</pre>
+      <!-- Datei-Upload Input: nur XML-Dateien erlaubt -->
+     <input type="file" id="fileInput" accept=".xml" />
+  </div>
+  <div>    
+<script>  
 /* ------------------------------
-   Regulärer Ausdruck für erlaubte Unicode-Zeichen
-   STRLTN = alle erlaubten Zeichen
+   Regulärer Ausdruck für erlaubte Unicode-Zeichen
+   STRLTN = alle erlaubten Zeichen
 ------------------------------ */
 const STRLTN = /(([\t-\n\r -~¡-¬®-ćĊ-ěĞ-ģĦ-ıĴ-śŞ-ūŮ-žƏƠ-ơƯ-ưƷǍ-ǔǞ-ǟǤ-ǰǴ-ǵǺ-ǿȘ-țȞ-ȟȪ-ȫȮ-ȳəʒḂ-ḃḊ-ḋḐ-ḑḞ-ḡḤ-ḧḰ-ḱṀ-ṁṄ-ṅṖ-ṗṠ-ṣṪ-ṫẀ-ẅẌ-ẓẞẠ-ầẪ-ẬẮ-ềỄ-ồỖ-ờỤ-ỹ€])|(M̂|N̂|m̂|n̂|D̂|d̂|J̌|L̂|l̂))*/g;
 /* ------------------------------
-   Funktion zum Prüfen des Textes
-   - text: der zu prüfende Text
-   - path: XML-Pfad für die Fehlermeldung
-   - output: Array zum Sammeln der Ergebnisse
+   Funktion zum Prüfen des Textes
+   - text: der zu prüfende Text
+   - path: XML-Pfad für die Fehlermeldung
+   - output: Array zum Sammeln der Ergebnisse
 ------------------------------ */
 function validateText(text, path, output) {
-  // Entferne erlaubte Zeichen, übrig bleiben Fehler
-  const fault = text.replace(STRLTN, "");
-  // Wenn Fehler gefunden 
-  if (fault.length > 0) {
-    const uniqueFaults = [...new Set(fault)]; // Nur einmal pro Zeichen speichern (doppelte entfernen)
-    let marked = text; // Kopie des Originaltexts, in dem die verbotenen Zeichen markiert werden
-  // Jedes verbotene Zeichen markieren
-    for (const char of uniqueFaults) {
-      marked = marked.replaceAll(char, `>>>${char}<<<`);
-    }
-  // Fehlermeldung vorbereiten
-  // charCodeAt(0) gibt den UTF-16 Code, toString(16) wandelt ihn in Hex um
-    const faultCodes = uniqueFaults.map(c => "0x" + c.charCodeAt(0).toString(16));
-    output.push(
-      `❌ FEHLER in Element: ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
-    );
-  }
+  // Entferne erlaubte Zeichen, übrig bleiben Fehler
+  const fault = text.replace(STRLTN, "");
+  // Wenn Fehler gefunden
+  if (fault.length > 0) {
+    const uniqueFaults = [...new Set(fault)]; // Nur einmal pro Zeichen speichern (doppelte entfernen)
+    let marked = text; // Kopie des Originaltexts, in dem die verbotenen Zeichen markiert werden
+  // Jedes verbotene Zeichen markieren
+    for (const char of uniqueFaults) {
+      marked = marked.replaceAll(char, `>>>${char}<<<`);
+    }
+  // Fehlermeldung vorbereiten
+  // charCodeAt(0) gibt den UTF-16 Code, toString(16) wandelt ihn in Hex um
+    const faultCodes = uniqueFaults.map(c => "0x" + c.charCodeAt(0).toString(16));
+    output.push(
+      `❌ FEHLER in Element: ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
+    );
+  }
 }
 /* ------------------------------
-   Funktion, die alle XML-Elemente rekursiv durchläuft
-   - element: aktuelles XML-Element
-   - currentPath: Pfad für Fehlermeldungen
-   - output: Array für Ergebnisse
+   Funktion, die alle XML-Elemente rekursiv durchläuft
+   - element: aktuelles XML-Element
+   - currentPath: Pfad für Fehlermeldungen
+   - output: Array für Ergebnisse
 ------------------------------ */
 function iterChildren(element, currentPath, output) {
-  const tag = element.tagName;
-  let tagText = tag;
-  // Versuche, einen sprechenden Namen aus Unterelementen zu holen:
-  // - id direkt im Element
-  // - id innerhalb eines "identifikation"-Elements
-  // - name direkt im Element
-  const idNode = element.querySelector(":scope > id, :scope > identifikation > id, :scope > name");
-  if (idNode && idNode.textContent.trim()) {
-    tagText = idNode.textContent.trim();
-  }
- // Pfad zum aktuellen Element extrahieren
- // Nur, wenn das Element genau einen Text-Knoten enthält
-  let path = currentPath ? `${currentPath}/${tagText}` : tagText
-  // unnötige Teile werden rausgeschmissen
- path=path
-   .replace(/^(xdf3:)?xdatenfelder\.[^/]+\//, "")
-   .replace(/\/(struktur|enthaelt)(?=\/|$)/g, "")
-   .replace(/xdf3:/g,"")
-     .replace(/\/+/g, "/")
-     .replace(/^\/|\/$/g, "");
- // Text im aktuellen Element
-  const text = 
-    element.childNodes.length === 1 && element.firstChild.nodeType === Node.TEXT_NODE ? 
-    element.textContent.trim() 
-    : "";
+  const tag = element.tagName;
+  let tagText = tag;
+  // Versuche, einen sprechenden Namen aus Unterelementen zu holen:
+  // - id direkt im Element
+  // - id innerhalb eines "identifikation"-Elements
+  // - name direkt im Element
+  const idNode = element.querySelector(":scope > id, :scope > identifikation > id, :scope > name");
+  if (idNode && idNode.textContent.trim()) {
+    tagText = idNode.textContent.trim();
+  }
+ // Pfad zum aktuellen Element extrahieren
+ // Nur, wenn das Element genau einen Text-Knoten enthält
+  let path = currentPath ? `${currentPath}/${tagText}` : tagText
+  // unnötige Teile werden rausgeschmissen
+ path=path
+   .replace(/^(xdf3:)?xdatenfelder\.[^/]+\//, "")
+   .replace(/\/(struktur|enthaelt)(?=\/|$)/g, "")
+   .replace(/xdf3:/g,"")
+     .replace(/\/+/g, "/")
+     .replace(/^\/|\/$/g, "");
+ // Text im aktuellen Element
+  const text =
+    element.childNodes.length === 1 && element.firstChild.nodeType === Node.TEXT_NODE ?
+    element.textContent.trim()
+    : "";
 
-  if (text) {
-    validateText(text, path, output); // Text prüfen
-  }
+  if (text) {
+    validateText(text, path, output); // Text prüfen
+  }
 // Rekursiv alle Kinder prüfen
-  for (const child of element.children) {
-    iterChildren(child, path, output);
-  }
+  for (const child of element.children) {
+    iterChildren(child, path, output);
+  }
 }
 /* ------------------------------
-   Event Listener für Datei-Upload
+   Event Listener für Datei-Upload
 ------------------------------ */
 document.getElementById("fileInput").addEventListener("change", event => {
-  const file = event.target.files[0]; // nimmt erste ausgewählte datei
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => { // Funktion wird aufgerufen, wenn die Datei komplett eingelesen wurde
-    const xmlString = e.target.result; // XML als Zeichenkette
-    const parser = new DOMParser(); // DOMParser kann aus Text ein XML-Dokument-Objekt machen
-    const xmlDoc = parser.parseFromString(xmlString, "application/xml"); 
+  const file = event.target.files[0]; // nimmt erste ausgewählte datei
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { // Funktion wird aufgerufen, wenn die Datei komplett eingelesen wurde
+    const xmlString = e.target.result; // XML als Zeichenkette
+    const parser = new DOMParser(); // DOMParser kann aus Text ein XML-Dokument-Objekt machen
+    const xmlDoc = parser.parseFromString(xmlString, "application/xml");
 
-    const output = []; // Hier werden später alle Meldungen gesammelt
+    const output = []; // Hier werden später alle Meldungen gesammelt
 
-    // Prüfen, ob Parsing erfolgreich war
-    if (xmlDoc.querySelector("parsererror")) {
-      output.push("❌ Fehler: XML konnte nicht gelesen werden!");
-    } else {
-      output.push("--- STARTING ITERATION ---\n");
-      iterChildren(xmlDoc.documentElement, "", output); // Hauptfunktion aufrufen
-      output.push("\n--- FINISHED ITERATION ---");
-    }
-   // Ergebnisse in HTML ausgeben (rot markierte Zeichen werden angezeigt)
-   // join("\n\n") → fügt alle Array-Einträge mit Leerzeile zusammen
-    document.getElementById("output").textContent = output.join("\n\n");
-  };
-  reader.readAsText(file, "utf-8"); // startet Einlesen der Datei als Text
+    // Prüfen, ob Parsing erfolgreich war
+    if (xmlDoc.querySelector("parsererror")) {
+      output.push("❌ Fehler: XML konnte nicht gelesen werden!");
+    } else {
+      output.push("--- STARTING ITERATION ---\n");
+      iterChildren(xmlDoc.documentElement, "", output); // Hauptfunktion aufrufen
+      output.push("\n--- FINISHED ITERATION ---");
+    }
+   // Ergebnisse in HTML ausgeben (rot markierte Zeichen werden angezeigt)
+   // join("\n\n") → fügt alle Array-Einträge mit Leerzeile zusammen
+    document.getElementById("output").textContent = output.join("\n\n");
+  };
+  reader.readAsText(file, "utf-8"); // startet Einlesen der Datei als Text
 });
 </script>
 </body>
