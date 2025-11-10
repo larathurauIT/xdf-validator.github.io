@@ -119,7 +119,7 @@ function validateText(text, path, output) {
   // charCodeAt(0) gibt den UTF-16 Code, toString(16) wandelt ihn in Hex um
     const faultCodes = uniqueFaults.map(c => "0x" + c.charCodeAt(0).toString(16));
     output.push(
-      `❌ FEHLER in Element ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
+      `❌ FEHLER in Element: ${path}\nText: ${marked}\nverbotene unicode Zeichen: ${faultCodes.join(", ")}\n`
     );
   }
 }
@@ -145,7 +145,7 @@ function iterChildren(element, currentPath, output) {
   let path = currentPath ? `${currentPath}/${tagText}` : tagText
   // unnötige Teile werden rausgeschmissen
  path=path
-   .replace(/^xdf3:xdatenfelder\.[^/]+\//,"")
+   .replace(/^(xdf3:)?xdatenfelder\.[^/]+\//, "")
    .replace(/xdf3:struktur\/xdf3:enthaelt\//g,"")
    .replace(/xdf3:/g,"")
      .replace(/\/+/g, "/")
