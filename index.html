@@ -20,7 +20,7 @@ Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
    /* ------------------------------
      Allgemeine Stile für die Seite
   ------------------------------ */
-  body {
+  html, body {
         font-family: Arial, sans-serif; /* Schriftart für die ganze Seite */
         margin: 0;                         /* Standardabstand entfernen */
         height: 100%;                     /* Body soll die volle Höhe einnehmen */
@@ -91,7 +91,7 @@ Hinweise:      - Funktioniert nur mit UTF-8 codierten XML-Dateien
       <!-- Datei-Upload Input: nur XML-Dateien erlaubt -->
      <input type="file" id="fileInput" accept=".xml" />
   </div>
-  <div>    
+    </div>
 <script>  
 /* ------------------------------
    Regulärer Ausdruck für erlaubte Unicode-Zeichen
